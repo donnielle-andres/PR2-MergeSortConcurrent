@@ -2,6 +2,9 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class Main {
+    public static List<Interval> intervals;
+    public static ConcurrentHashMap<Interval, Boolean> mergedIntervals = new ConcurrentHashMap<>();
+
     public static void main(String[] args) {
         // TODO: Seed your randomizer
         Random rand = new Random(123);
@@ -35,12 +38,13 @@ public class Main {
 
 
         //TEMP DISPLAY SHUFFLED ARRAY
-
+        /*
         System.out.println("SHUFFLED ARRAY:");
         for (int i = 0; i < array_size; i++) {
             System.out.print(array[i] + " ");
         }
         System.out.println("\n");
+         */
 
 
 
@@ -56,7 +60,7 @@ public class Main {
             startTime = System.currentTimeMillis();
 
             for (Interval interval : intervals) {
-                merge(array, interval.getStart(), interval.getEnd());
+                merge(array, interval);
             }
         }
         else {
@@ -86,13 +90,14 @@ public class Main {
         long endTime = System.currentTimeMillis();
 
         //TEMP DISPLAY SORTED ARRAY
+        /*
         System.out.println("\nSORTED ARRAY:");
         for (int i = 0; i < array_size; i++) {
             System.out.print(array[i] + " ");
         }
         System.out.println("\n");
 
-        System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
+         */
 
 
         // SANITY CHECK
@@ -102,6 +107,7 @@ public class Main {
                 System.out.println("array[" + i + "] = " + array[i]);
             }
         }
+        System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
 
 
 
@@ -129,6 +135,7 @@ public class Main {
         while(i < frontier.size()){
             int s = frontier.get(i).getStart();
             int e = frontier.get(i).getEnd();
+            Interval parent = frontier.get(i);
 
             i++;
 
@@ -141,8 +148,13 @@ public class Main {
             int m = s + (e - s) / 2;
 
             // add prerequisite intervals
-            frontier.add(new Interval(m + 1,e));
-            frontier.add(new Interval(s,m));
+            Interval leftChild = new Interval(s, m);
+            Interval rightChild = new Interval(m + 1, e);
+            parent.addDependency(leftChild);
+            parent.addDependency(rightChild);
+
+            frontier.add(leftChild);
+            frontier.add(rightChild);
         }
 
         List<Interval> retval = new ArrayList<>();
@@ -161,7 +173,10 @@ public class Main {
    s     : int         - start index of merge
    e     : int         - end index (inclusive) of merge
    */
-    public static void merge(int[] array, int s, int e) {
+    public static void merge(int[] array, Interval interval) {
+        int s = interval.getStart();
+        int e = interval.getEnd();
+
         int m = s + (e - s) / 2;
         int[] left = new int[m - s + 1];
         int[] right = new int[e - m];
@@ -190,14 +205,8 @@ public class Main {
                 r_ptr++;
             }
         }
-        /*
-        System.out.println("Intervals: [" + s + ", " + e + "]");
-        for (int i = 0; i < array.length; i++) {
-            System.out.print(array[i] + " ");
-        }
-        System.out.print("\n");
 
-         */
+        mergedIntervals.put(interval, true);
     }
 
     static class thread implements Runnable {
@@ -216,8 +225,18 @@ public class Main {
                 do {
                     interval = queue.poll(1, TimeUnit.SECONDS);
 
-                    if (interval != null)
-                        merge(array, interval.getStart(), interval.getEnd());
+                    if (interval != null) {
+                        boolean mergebool = true;
+                        for (Interval dependency : interval.getDependencies()) {
+                            if (!mergedIntervals.containsKey(dependency)) {
+                                queue.put(interval);
+                                mergebool = false;
+                                break;
+                            }
+                        }
+                        if (mergebool)
+                            merge(array, interval);
+                    }
                 }
                 while (interval != null);
             } catch (InterruptedException e) {
@@ -231,9 +250,12 @@ class Interval {
     private int start;
     private int end;
 
+    private List<Interval> dependencies;
+
     public Interval(int start, int end) {
         this.start = start;
         this.end = end;
+        this.dependencies = new ArrayList<>();
     }
 
     public int getStart() {
@@ -250,6 +272,14 @@ class Interval {
 
     public void setEnd(int end) {
         this.end = end;
+    }
+
+    public void addDependency(Interval interval) {
+        this.dependencies.add(interval);
+    }
+
+    public List<Interval> getDependencies() {
+        return dependencies;
     }
 }
 
