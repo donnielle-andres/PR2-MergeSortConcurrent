@@ -23,28 +23,29 @@ public class Main {
         }
 
         // TODO: Generate a random array of given size
-        Integer[] integers = new Integer[array_size];
-        for (int i = 0; i < array_size; i++) {
-            integers[i] = i+1;
-        }
-
-        // Shuffle list and turn it into int array
-        List<Integer> listArray = Arrays.asList(integers);
-        Collections.shuffle(listArray, rand);
         int[] array = new int[array_size];
         for (int i = 0; i < array_size; i++) {
-            array[i] = listArray.get(i);
+            array[i] = i + 1;
+        }
+
+        // Shuffle the array
+        for (int i = array_size - 1; i > 0; i--) {
+            int index = rand.nextInt(i + 1);
+            // Swap array[i] and array[index]
+            int temp = array[i];
+            array[i] = array[index];
+            array[index] = temp;
         }
 
 
         //TEMP DISPLAY SHUFFLED ARRAY
-        /*
+        /**/
         System.out.println("SHUFFLED ARRAY:");
         for (int i = 0; i < array_size; i++) {
             System.out.print(array[i] + " ");
         }
         System.out.println("\n");
-         */
+         
 
 
 
@@ -90,14 +91,14 @@ public class Main {
         long endTime = System.currentTimeMillis();
 
         //TEMP DISPLAY SORTED ARRAY
-        /*
+        /**/
         System.out.println("\nSORTED ARRAY:");
         for (int i = 0; i < array_size; i++) {
             System.out.print(array[i] + " ");
         }
         System.out.println("\n");
 
-         */
+         
 
 
         // SANITY CHECK
@@ -107,9 +108,10 @@ public class Main {
                 System.out.println("array[" + i + "] = " + array[i]);
             }
         }
+        System.out.println("Array is sorted.");
         System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
 
-
+        sc.close();
 
         // Once you get the single-threaded version to work, it's time to
         // implement the concurrent version. Good luck :)
