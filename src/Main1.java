@@ -1,7 +1,7 @@
 import java.util.*;
 import java.util.concurrent.*;
 
-public class Main {
+public class Main1 {
     public static List<Interval> intervals;
     public static ConcurrentHashMap<Interval, Boolean> mergedIntervals = new ConcurrentHashMap<>();
 
@@ -37,18 +37,15 @@ public class Main {
             array[index] = temp;
         }
 
-
-        //TEMP DISPLAY SHUFFLED ARRAY
-        /*
+        /*TEMP DISPLAY SHUFFLED ARRAY
         System.out.println("SHUFFLED ARRAY:");
         for (int i = 0; i < array_size; i++) {
             System.out.print(array[i] + " ");
         }
         System.out.println("\n");*/
 
-
         // TODO: Call the generate_intervals method to generate the merge sequence
-        List<Interval> intervals = generate_intervals(0, array_size-1);
+        List<Interval> intervals = generate_intervals(0, array_size - 1);
 
         // TODO: Call merge on each interval in sequence
         long startTime;
@@ -61,58 +58,41 @@ public class Main {
             for (Interval interval : intervals) {
                 merge(array, interval);
             }
-        }
-        else {
-            BlockingQueue<Interval> queue = new ArrayBlockingQueue<>(intervals.size());
-            queue.addAll(intervals);
-
-            ExecutorService executorService = Executors.newFixedThreadPool(thread_count);
-
+        } else {
             // Record the start time
             startTime = System.currentTimeMillis();
 
-            for (int i = 0; i < thread_count; i++) {
-                executorService.submit(new thread(array, queue));
-            }
-            executorService.shutdown();
+            ForkJoinPool pool = new ForkJoinPool(thread_count);
+            pool.invoke(new MergeTask(array, intervals, 0, intervals.size() - 1));
 
-            // Wait until all tasks are finished
-            try {
-                executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            pool.shutdown();
         }
-
 
         // Record the end time
         long endTime = System.currentTimeMillis();
 
-        //TEMP DISPLAY SORTED ARRAY
-        /*
+        /*TEMP DISPLAY SORTED ARRAY
         System.out.println("\nSORTED ARRAY:");
         for (int i = 0; i < array_size; i++) {
             System.out.print(array[i] + " ");
         }
-        System.out.println("\n");*/
-
+        System.out.println("\n");
 
         // SANITY CHECK
         for (int i = 0; i < array_size; i++) {
-            if (i != array_size-1 && array[i] != i+1) {
+            if (i != array_size - 1 && array[i] != i + 1) {
                 System.out.println("Array is not sorted.");
                 System.out.println("array[" + i + "] = " + array[i]);
             }
         }
-        System.out.println("Array is sorted.");
+        System.out.println("Array is sorted."); */
+        
         System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
 
         sc.close();
 
         // Once you get the single-threaded version to work, it's time to
         // implement the concurrent version. Good luck :)
-
-
     }
 
     /*
@@ -127,10 +107,10 @@ public class Main {
     */
     public static List<Interval> generate_intervals(int start, int end) {
         List<Interval> frontier = new ArrayList<>();
-        frontier.add(new Interval(start,end));
+        frontier.add(new Interval(start, end));
 
         int i = 0;
-        while(i < frontier.size()){
+        while (i < frontier.size()) {
             int s = frontier.get(i).getStart();
             int e = frontier.get(i).getEnd();
             Interval parent = frontier.get(i);
@@ -138,7 +118,7 @@ public class Main {
             i++;
 
             // if base case
-            if(s == e){
+            if (s == e) {
                 continue;
             }
 
@@ -156,7 +136,7 @@ public class Main {
         }
 
         List<Interval> retval = new ArrayList<>();
-        for(i = frontier.size() - 1; i >= 0; i--) {
+        for (i = frontier.size() - 1; i >= 0; i--) {
             retval.add(frontier.get(i));
         }
 
@@ -207,77 +187,69 @@ public class Main {
         mergedIntervals.put(interval, true);
     }
 
-    static class thread implements Runnable {
-        private int[] array;
-        private BlockingQueue<Interval> queue;
+    static class MergeTask extends RecursiveAction {
+        private final int[] array;
+        private final List<Interval> intervals;
+        private final int start;
+        private final int end;
 
-        public thread(int[] array, BlockingQueue<Interval> queue) {
+        public MergeTask(int[] array, List<Interval> intervals, int start, int end) {
             this.array = array;
-            this.queue = queue;
+            this.intervals = intervals;
+            this.start = start;
+            this.end = end;
         }
 
         @Override
-        public void run() {
-            try {
-                Interval interval;
-                do {
-                    interval = queue.poll(1, TimeUnit.SECONDS);
+        protected void compute() {
+            if (start < end) {
+                int mid = start + (end - start) / 2;
 
-                    if (interval != null) {
-                        boolean mergebool = true;
-                        for (Interval dependency : interval.getDependencies()) {
-                            if (!mergedIntervals.containsKey(dependency)) {
-                                queue.put(interval);
-                                mergebool = false;
-                                break;
-                            }
-                        }
-                        if (mergebool)
-                            merge(array, interval);
-                    }
-                }
-                while (interval != null);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                MergeTask leftTask = new MergeTask(array, intervals, start, mid);
+                MergeTask rightTask = new MergeTask(array, intervals, mid + 1, end);
+
+                invokeAll(leftTask, rightTask);
+
+                merge(array, intervals.get(mid));
             }
         }
     }
-}
 
-class Interval {
-    private int start;
-    private int end;
+    static class Interval {
+        private int start;
+        private int end;
 
-    private List<Interval> dependencies;
+        private List<Interval> dependencies;
 
-    public Interval(int start, int end) {
-        this.start = start;
-        this.end = end;
-        this.dependencies = new ArrayList<>();
-    }
+        public Interval(int start, int end) {
+            this.start = start;
+            this.end = end;
+            this.dependencies = new ArrayList<>();
+        }
 
-    public int getStart() {
-        return start;
-    }
+        public int getStart() {
+            return start;
+        }
 
-    public void setStart(int start) {
-        this.start = start;
-    }
+        public void setStart(int start) {
+            this.start = start;
+        }
 
-    public int getEnd() {
-        return end;
-    }
+        public int getEnd() {
+            return end;
+        }
 
-    public void setEnd(int end) {
-        this.end = end;
-    }
+        public void setEnd(int end) {
+            this.end = end;
+        }
 
-    public void addDependency(Interval interval) {
-        this.dependencies.add(interval);
-    }
+        public void addDependency(Interval interval) {
+            this.dependencies.add(interval);
+        }
 
-    public List<Interval> getDependencies() {
-        return dependencies;
+        public List<Interval> getDependencies() {
+            return dependencies;
+        }
     }
 }
 
