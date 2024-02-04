@@ -12,8 +12,14 @@ public class Main {
         // TODO: Get array size and thread count from user
         Scanner sc = new Scanner(System.in);
 
-        System.out.print("Enter array size: ");
+        System.out.print("Enter array size (up to 2^23): ");
         int array_size = sc.nextInt();
+
+        if (array_size <= 0 || array_size > Math.pow(2, 23)) {
+            System.out.println("Array size must be a positive integer up to 2^23.");
+            System.exit(1);
+        }
+
         System.out.print("Enter thread count: ");
         int thread_count = sc.nextInt();
 
@@ -36,15 +42,6 @@ public class Main {
             array[i] = array[index];
             array[index] = temp;
         }
-
-
-        //TEMP DISPLAY SHUFFLED ARRAY
-        /*
-        System.out.println("SHUFFLED ARRAY:");
-        for (int i = 0; i < array_size; i++) {
-            System.out.print(array[i] + " ");
-        }
-        System.out.println("\n");*/
 
 
         // TODO: Call the generate_intervals method to generate the merge sequence
@@ -84,7 +81,6 @@ public class Main {
             }
         }
 
-
         // Record the end time
         long endTime = System.currentTimeMillis();
 
@@ -97,7 +93,9 @@ public class Main {
         System.out.println("\n");*/
 
         System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
+
         System.out.println("Running sanity check...");
+
         // SANITY CHECK
         for (int i = 0; i < array_size; i++) {
             if (i != array_size-1 && array[i] != i+1) {
