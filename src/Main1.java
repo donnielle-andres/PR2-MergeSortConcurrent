@@ -79,29 +79,23 @@ public class Main1 {
         }
         System.out.println("\n");*/
 
-        /*  SANITY CHECK
+         */
+        // SANITY CHECK
+        
+        System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
+
+        System.out.println("Running Sanity Check...");
+
         for (int i = 0; i < array_size; i++) {
             if (i != array_size - 1 && array[i] != i + 1) {
                 System.out.println("Array is not sorted.");
-                System.out.println("array[" + i + "] = " + array[i]);
-            }
-        }
-        System.out.println("Array is sorted."); */
-
-        boolean sorted = true;
-        for (int i = 0; i < array_size - 1; i++) {
-            if (array[i] > array[i + 1]) {
-                sorted = false;
                 break;
             }
+            else if (i == array_size - 1)
+                System.out.println("Array is sorted.");
         }
-
-        if (sorted) {
-            System.out.println("Array is sorted.");
-        } else {
-            System.out.println("Array is not sorted.");
-        }
-
+        System.out.println("Array is sorted."); */
+        
         System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
 
         sc.close();
