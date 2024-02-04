@@ -10,7 +10,7 @@ echo "Starting the experiment script..."
 
 # Compile Java program
 echo "Compiling the Java program..."
-javac Main.java
+javac Main1.java
 
 # Set array size
 array_size=$((2**23))

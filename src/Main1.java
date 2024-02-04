@@ -62,10 +62,11 @@ public class Main1 {
             // Record the start time
             startTime = System.currentTimeMillis();
 
-            ForkJoinPool pool = new ForkJoinPool(thread_count);
-            pool.invoke(new MergeTask(array, intervals, 0, intervals.size() - 1));
+            try (ForkJoinPool pool = new ForkJoinPool(thread_count)) {
+                pool.invoke(new MergeTask(array, intervals, 0, intervals.size() - 1));
 
-            pool.shutdown();
+                pool.shutdown();
+            }
         }
 
         // Record the end time
@@ -76,9 +77,9 @@ public class Main1 {
         for (int i = 0; i < array_size; i++) {
             System.out.print(array[i] + " ");
         }
-        System.out.println("\n");
+        System.out.println("\n");*/
 
-        // SANITY CHECK
+        /*  SANITY CHECK
         for (int i = 0; i < array_size; i++) {
             if (i != array_size - 1 && array[i] != i + 1) {
                 System.out.println("Array is not sorted.");
@@ -86,10 +87,25 @@ public class Main1 {
             }
         }
         System.out.println("Array is sorted."); */
-        
+
+        boolean sorted = true;
+        for (int i = 0; i < array_size - 1; i++) {
+            if (array[i] > array[i + 1]) {
+                sorted = false;
+                break;
+            }
+        }
+
+        if (sorted) {
+            System.out.println("Array is sorted.");
+        } else {
+            System.out.println("Array is not sorted.");
+        }
+
         System.out.println("\nRuntime: " + (endTime - startTime) + " milliseconds");
 
         sc.close();
+        
 
         // Once you get the single-threaded version to work, it's time to
         // implement the concurrent version. Good luck :)
